@@ -1,0 +1,27 @@
+{
+  "languages": {
+      "TypeScript": { "language_servers": ["vtsls", "..."] },
+      "TSX":        { "language_servers": ["vtsls", "..."] },
+      "JavaScript": { "language_servers": ["vtsls", "..."] }
+  },
+	"lsp": {
+	  "vtsls": {
+			"binary": {
+	      "path": "/bin/zsh",
+				"arguments": ["-l", "-c", "yarn node  ./.yarn/sdks/typescript/lib/tsserver.js"],
+				"env": {
+          "PATH": "~/.nvm/versions/node/v24.2.0/bin:/usr/local/bin:/usr/bin:/bin"
+        }
+			}
+    },
+    "biome": {
+      "binary": {
+        "path": "/bin/zsh",
+        "arguments": ["-l", "-c", "yarn biome lsp-proxy"],
+        "env": {
+          "PATH": "~/.nvm/versions/node/v24.2.0/bin:/usr/local/bin:/usr/bin:/bin"
+        }
+      }
+    }
+	}
+}
