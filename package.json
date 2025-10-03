@@ -2,27 +2,18 @@
   "name": "bl-shop",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "pckgs/site"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "@biomejs/biome": "^2.2.4",
-    "next": "15.5.4",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
-  },
-  "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@next/eslint-plugin-next": "^15.5.4",
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "dev": "yarn workspace site dev",
+    "build": "yarn workspace site build",
+    "start": "yarn workspace site start",
+    "lint": "yarn workspace site lint",
+    "cms:dev": "cd pckgs/cms && yarn develop",
+    "cms:build": "cd pckgs/cms && yarn build",
+    "cms:start": "cd pckgs/cms && yarn start",
+    "cms:install": "cd pckgs/cms && yarn install"
   },
   "packageManager": "yarn@4.9.2"
 }

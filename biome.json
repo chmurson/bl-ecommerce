@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["src/**/*.{js,jsx,ts,tsx}"]
+    "includes": ["pckgs/**/*.{js,jsx,ts,tsx,json}", "*.{json,mjs,md}", "!node_modules", "!.*"]
   },
   "formatter": {
     "enabled": true,
