@@ -10,10 +10,17 @@
     "build": "yarn workspace site build",
     "start": "yarn workspace site start",
     "lint": "yarn workspace site lint",
+    "commitlint": "commitlint",
     "cms:dev": "cd pckgs/cms && yarn develop",
     "cms:build": "cd pckgs/cms && yarn build",
     "cms:start": "cd pckgs/cms && yarn start",
-    "cms:install": "cd pckgs/cms && yarn install"
+    "cms:install": "cd pckgs/cms && yarn install",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
+    "husky": "^9.1.7"
   },
   "packageManager": "yarn@4.9.2"
 }

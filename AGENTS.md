@@ -1,21 +1,66 @@
-# Repository Guidelines
+# Agent Handbook
 
-## Project Structure & Module Organization
-Keep all production code under `src/`, using the App Router in `src/app/` to compose routes and layouts. Group feature-specific UI in nested route segments (`src/app/(cart)/summary`) and keep shared utilities in `src/lib/` while reusable components live in `src/components/`. Store automated tests alongside features in `src/__tests__/` with filenames mirroring the module under test (`src/lib/format-price.ts` -> `src/__tests__/format-price.test.ts`). Static assets (logos, favicons, Open Graph images) belong in `public/` and should be referenced relatively. Configuration files (.editorconfig, eslint config, Tailwind, etc.) stay at the repository root so Yarn Plug'n'Play (`.pnp.cjs`) continues to resolve modules deterministically.
+## TL;DR
+- Yarn 4 (Berry) with Plug'n'Play is the package manager; never add `node_modules` or run `npm install`.
+- Biome handles all linting and formatting. `yarn lint` will rewrite files in place to satisfy the style guide.
+- The user-facing surface lives in `pckgs/site` (Next.js App Router). The headless CMS for content lives in `pckgs/cms` (Strapi); expect to deploy it separately from the site.
+- The Next.js app is stateless: catalog data is fetched from the CMS, checkout is powered by Stripe, and there is no application database.
+- There are no automated tests yet. Add new tests under `pckgs/site/src/__tests__/` and mirror the module path (`format-price.ts` → `format-price.test.ts`).
+- Commit messages follow Conventional Commits (`feat:`, `fix:`, etc.). Run `yarn commitlint --from HEAD~1` locally if you need to double-check formatting.
 
-## Build, Test, and Development Commands
-Install dependencies with `yarn install`; Yarn 4 runs in Plug'n'Play mode, so avoid `npm install`. Define runnable scripts in `package.json` and invoke them via `yarn <script>`. Typical examples:
-- `yarn dev` — start the local development server at http://localhost:3000.
-- `yarn build` — produce a production-ready bundle with Turbopack.
-- `yarn lint` — run the flat-config ESLint suite (Core Web Vitals rules).
-- `yarn test` — execute the automated test suite once it is added.
-If a script touches Node binaries directly, prefer `yarn node <file>` or `yarn exec <tool>` so dependencies load through PnP without a `node_modules` folder.
+## Repository Layout
+| Path | Description |
+| --- | --- |
+| `.` | Shared configuration (`biome.json`, `.editorconfig`, Turbopack config) and the Yarn Berry workspace root. |
+| `pckgs/site` | Next.js 15 App Router project. Anything shipped to production should live here under `src/` with feature routes segmented inside `src/app/…`. |
+| `pckgs/site/src/app` | App Router entry point. Use nested segments (`(cart)/summary`) to group feature-specific UI. Shared hooks and utilities belong under `src/lib/`, reusable UI under `src/components/`. |
+| `pckgs/cms` | Strapi-based CMS used for product data and rich content. Primarily for local development but will eventually be hosted independently from the site. |
+| `public/` | Static assets shared by the site (favicons, OG images, etc.). Reference them relatively from Next.js routes. |
 
-## Coding Style & Naming Conventions
-Respect the root `.editorconfig`: UTF-8, LF line endings, two-space indentation, and a trailing newline. Keep TypeScript/JavaScript files in ES module syntax and name React components in PascalCase (`ProductList`). Utility functions use camelCase (`formatPrice`). Commit generated files or build artefacts only when explicitly required. When formatting help is needed, add a `format` script that runs Prettier (`yarn format`).
+## Tooling
+- **Package manager:** Yarn 4.9.2 in Plug'n'Play mode. Use `yarn install` (or `yarn install --immutable` in CI) to sync dependencies. Do not check in `node_modules/` directories—Strapi may generate one locally, but PnP is still the source of truth.
+- **Runtime:** The site targets the latest Next.js and React (app router). Align Node versions via `.nvmrc` if one is added; otherwise follow the version used in CI.
+- **Formatting & linting:** Biome is the single source of truth. `yarn lint` runs `biome check … --write` inside the `site` workspace. Use `yarn workspace site lint-fix` for an aggressive rewrite or `yarn workspace site lint --no-write` once that script exists. Ignore `eslint` unless you are updating legacy rules.
+- **Editor settings:** `.editorconfig` enforces UTF-8, LF, two spaces, trailing newline. Biome uses a 160 char line width and double quotes by default.
 
-## Testing Guidelines
-Adopt a single test runner (Vitest or Jest recommended) and expose it via `yarn test`. Co-locate unit tests within `src/__tests__/` and name them `*.test.ts`. Integration scenarios should document expected fixtures under `src/__tests__/__fixtures__/`. Maintain fast feedback by running `yarn test --watch` before pushing. Target ≥80% line coverage and document any intentional gaps in the pull request description.
+## Scripts & Workflows
+- `yarn dev` – Launches the Next.js site (http://localhost:3000).
+- `yarn build` / `yarn start` – Production bundle + start via `next`.
+- `yarn lint` – Runs Biome with write mode against the site workspace.
+- `yarn commitlint` – Lints commit history using Conventional Commit rules (pass `--from` / `--to` as needed).
+- `yarn cms:dev` – Starts the Strapi CMS locally (defaults to http://localhost:1337).
+- `yarn cms:build` / `yarn cms:start` – Build and serve the CMS for production verification.
+- `yarn cms:install` – Installs CMS dependencies (required after pulling upstream Strapi updates).
 
-## Commit & Pull Request Guidelines
-Follow the existing short, imperative commit style (`init`); keep summaries under 50 characters and add descriptive body text when necessary. Reference issue IDs in the body (`Refs #123`). Pull requests must describe the change, include screenshots or terminal output for UI/API changes, list test coverage, and call out risks or rollout steps. Request review from at least one teammate before merging and wait for CI to pass.
+When working on features:
+1. Run `yarn install` once per pull to sync PnP.
+2. Start the app with `yarn dev`. Use the CMS in parallel if the feature touches catalog content (`yarn cms:dev`).
+3. Keep CMS schema changes coordinated. Export Strapi configs to source control (see `pckgs/cms/config` and `pckgs/cms/src`).
+4. Use Stripe test keys for checkout flows. Store secrets in `.env.local` for the site and `.env` for the CMS; do not commit them. Document any new required variables in the README and in this file.
+
+## Testing & QA
+- There is no automated test suite yet. If you add one, colocate tests inside `pckgs/site/src/__tests__/` and follow the `{module}.test.ts` naming pattern.
+- Prefer Vitest (works well with Next.js 15) or Jest. Expose the runner via `yarn test` at the root (`yarn workspace site test`) to match Yarn Plug'n'Play expectations.
+- Until tests exist, rely on manual QA: run `yarn build && yarn start` before handing off and smoke the main flows (catalog browse, cart, checkout → Stripe redirection).
+
+## CMS Notes
+- The CMS exports product data consumed by the site. Add content types and seed data under `pckgs/cms/src` so they are versioned.
+- The CMS may leverage a SQLite dev database under `pckgs/cms/.tmp` or similar. Keep those directories out of git.
+- For hosted environments, expect to deploy the CMS separately (e.g., Render, Railway). Provision environment variables and storage (S3, Cloudinary) in that context; the site will consume CMS APIs over HTTPS.
+
+## Stripe & External Services
+- Checkout is handled client-side via Stripe. Keep Stripe keys in environment variables (`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`). Never commit credentials.
+- If you add serverless handlers, put them under `pckgs/site/src/app/api/…`. Use the CMS as the source of truth for catalog data rather than persisting inside the Next.js app.
+
+## Pull Requests & Releases
+- Keep commits in Conventional Commit format (`feat: add product card`). Reference issues in the body (`Refs #123`).
+- PRs must describe the change, include screenshots for UI updates, note manual verification steps, and call out risks or rollout considerations (CMS migration, Stripe config, etc.).
+- Run `yarn lint` and, once available, `yarn test` before requesting review. Attach logs or screenshots for significant flows (Stripe checkout, CMS schema changes).
+- Coordinate CMS releases with site deploys. Version schema changes and content migrations so they can be applied predictably in staging and production.
+
+## Getting Help
+- Document tribal knowledge in this file or the README as it surfaces.
+- When unsure about CMS schema, coordinate with the content team before refactors.
+- If you encounter PnP resolution issues, run `yarn install --check-cache` and commit the updated `.yarn/` metadata if it changes.
+
+Keep this handbook up to date as the workflows evolve. Aim for clarity and reproducibility so future agents can ship confidently.

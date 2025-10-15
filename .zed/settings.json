@@ -1,8 +1,8 @@
 {
   "languages": {
-      "TypeScript": { "language_servers": ["vtsls", "..."] },
-      "TSX":        { "language_servers": ["vtsls", "..."] },
-      "JavaScript": { "language_servers": ["vtsls", "..."] }
+      "TypeScript": { "language_servers": ["vtsls", "..."], "format_on_save": "on", "formatter":"language_server" },
+      "TSX":        { "language_servers": ["vtsls", "..."], "format_on_save": "on", "formatter": "language_server"},
+      "JavaScript": { "language_servers": ["vtsls", "..."], "format_on_save": "on", "formatter": "language_server"}
   },
 	"lsp": {
 	  "vtsls": {
